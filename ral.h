@@ -1,3 +1,10 @@
+/*
+	RAL - Render ALready, a fixed point software renderer.
+	Basically a port of BOOTLEG3D by Benedict Henshaw to a fixed point rendering.
+	by Ilya Efimov, 2024.
+	CC0 1.0 Universal, Public Domain.
+*/
+
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
