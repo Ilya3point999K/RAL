@@ -2,7 +2,7 @@
         RAL - Render ALready, a fixed point software renderer.
         Basically a port of BOOTLEG3D by Benedict Henshaw to a fixed point
         rendering.
-        by Ilya Efimov, 2025.
+        by Ilya Efimov, 2024-2025.
         CC0 1.0 Universal, Public Domain.
 */
 
@@ -10,10 +10,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-//High precision trigonometry is quite a mess, if in your use-case there are
-//glitches like 1-2 pixels on the right edge of the screen are not being
-//rendered - define this, RAL_SET_FOV is the only place doubles are used.
-#ifdef RAL_SET_FOV_WITH_DOUBLES  
+// High precision trigonometry is quite a mess, if in your use-case there are
+// glitches like 1-2 pixels on the right edge of the screen are not being
+// rendered - define this, RAL_SET_FOV is the only place doubles are used.
+#ifdef RAL_SET_FOV_WITH_DOUBLES
 #include <math.h>
 #endif
 
@@ -100,7 +100,6 @@ enum {
 #define RAL_CEIL(a) ((a & 0xFFFF0000UL) + (a & 0x0000FFFFUL ? RAL_ONE : 0))
 #define RAL_PI RAL_FDIV(355 * RAL_ONE, 112 * RAL_ONE)
 
-
 typedef struct {
   RAL_PLANE clip_planes[RAL_NUM_CLIP_PLANES];
   RAL_M4 model, view, proj;
@@ -170,8 +169,7 @@ RAL_F RAL_ATAN2_HP(const RAL_F y, const RAL_F x) {
     angle = RAL_FMUL(rq, 12865) - RAL_FMUL(64337, r) + coeff_1;
   } else {
     RAL_F r = RAL_FDIV((x + abs_y), (abs_y - x));
-    RAL_F rq =
-        RAL_FMUL(RAL_FMUL(r, r), r);
+    RAL_F rq = RAL_FMUL(RAL_FMUL(r, r), r);
     angle = RAL_FMUL(rq, 12865) - RAL_FMUL(64337, r) + coeff_2;
   }
   if (y < 0)
@@ -753,9 +751,10 @@ void RAL_RASTERIZE_OBJ(RAL_CONTEXT* context, RAL_F ax, RAL_F ay, RAL_F az,
 }
 
 void RAL_RASTERIZE_TEX(RAL_CONTEXT* context, RAL_F ax, RAL_F ay, RAL_F az,
-                       RAL_F bx, RAL_F by, RAL_F bz, RAL_F cx, RAL_F cy,
-                       RAL_F cz, RAL_F au, RAL_F av, RAL_F bu, RAL_F bv,
-                       RAL_F cu, RAL_F cv, RAL_TEXTURE* texture) {
+                       RAL_F aw, RAL_F bx, RAL_F by, RAL_F bz, RAL_F bw,
+                       RAL_F cx, RAL_F cy, RAL_F cz, RAL_F cw, RAL_F au,
+                       RAL_F av, RAL_F bu, RAL_F bv, RAL_F cu, RAL_F cv,
+                       RAL_TEXTURE* texture) {
   RAL_F t = 0;
   if (ay > by) {
     t = ax;
@@ -767,6 +766,9 @@ void RAL_RASTERIZE_TEX(RAL_CONTEXT* context, RAL_F ax, RAL_F ay, RAL_F az,
     t = az;
     az = bz;
     bz = t;
+    t = aw;
+    aw = bw;
+    bw = t;
     t = au;
     au = bu;
     bu = t;
@@ -784,6 +786,9 @@ void RAL_RASTERIZE_TEX(RAL_CONTEXT* context, RAL_F ax, RAL_F ay, RAL_F az,
     t = az;
     az = cz;
     cz = t;
+    t = aw;
+    aw = cw;
+    cw = t;
     t = au;
     au = cu;
     cu = t;
@@ -801,6 +806,9 @@ void RAL_RASTERIZE_TEX(RAL_CONTEXT* context, RAL_F ax, RAL_F ay, RAL_F az,
     t = bz;
     bz = cz;
     cz = t;
+    t = bw;
+    bw = cw;
+    cw = t;
     t = bu;
     bu = cu;
     cu = t;
@@ -808,9 +816,9 @@ void RAL_RASTERIZE_TEX(RAL_CONTEXT* context, RAL_F ax, RAL_F ay, RAL_F az,
     bv = cv;
     cv = t;
   }
-  RAL_F a_oow = RAL_FDIV(RAL_ONE, az);
-  RAL_F b_oow = RAL_FDIV(RAL_ONE, bz);
-  RAL_F c_oow = RAL_FDIV(RAL_ONE, cz);
+  RAL_F a_oow = RAL_FDIV(RAL_ONE, aw);
+  RAL_F b_oow = RAL_FDIV(RAL_ONE, bw);
+  RAL_F c_oow = RAL_FDIV(RAL_ONE, cw);
 
   RAL_F a_uow = RAL_FMUL(au, a_oow);
   RAL_F a_vow = RAL_FMUL(av, a_oow);
@@ -911,11 +919,11 @@ void RAL_RASTERIZE_TEX(RAL_CONTEXT* context, RAL_F ax, RAL_F ay, RAL_F az,
   for (int y = sy; y < ey; ++y) INNER
 #undef INNER
 }
-
 void RAL_RASTERIZE_TEX_OBJ(RAL_CONTEXT* context, RAL_F ax, RAL_F ay, RAL_F az,
-                       RAL_F bx, RAL_F by, RAL_F bz, RAL_F cx, RAL_F cy,
-                       RAL_F cz, RAL_F au, RAL_F av, RAL_F bu, RAL_F bv,
-                       RAL_F cu, RAL_F cv, RAL_TEXTURE* texture, uint8_t obj) {
+                           RAL_F aw, RAL_F bx, RAL_F by, RAL_F bz, RAL_F bw,
+                           RAL_F cx, RAL_F cy, RAL_F cz, RAL_F cw, RAL_F au,
+                           RAL_F av, RAL_F bu, RAL_F bv, RAL_F cu, RAL_F cv,
+                           RAL_TEXTURE* texture, uint8_t obj) {
   RAL_F t = 0;
   if (ay > by) {
     t = ax;
@@ -927,6 +935,9 @@ void RAL_RASTERIZE_TEX_OBJ(RAL_CONTEXT* context, RAL_F ax, RAL_F ay, RAL_F az,
     t = az;
     az = bz;
     bz = t;
+    t = aw;
+    aw = bw;
+    bw = t;
     t = au;
     au = bu;
     bu = t;
@@ -944,6 +955,9 @@ void RAL_RASTERIZE_TEX_OBJ(RAL_CONTEXT* context, RAL_F ax, RAL_F ay, RAL_F az,
     t = az;
     az = cz;
     cz = t;
+    t = aw;
+    aw = cw;
+    cw = t;
     t = au;
     au = cu;
     cu = t;
@@ -961,6 +975,9 @@ void RAL_RASTERIZE_TEX_OBJ(RAL_CONTEXT* context, RAL_F ax, RAL_F ay, RAL_F az,
     t = bz;
     bz = cz;
     cz = t;
+    t = bw;
+    bw = cw;
+    cw = t;
     t = bu;
     bu = cu;
     cu = t;
@@ -968,9 +985,9 @@ void RAL_RASTERIZE_TEX_OBJ(RAL_CONTEXT* context, RAL_F ax, RAL_F ay, RAL_F az,
     bv = cv;
     cv = t;
   }
-  RAL_F a_oow = RAL_FDIV(RAL_ONE, az);
-  RAL_F b_oow = RAL_FDIV(RAL_ONE, bz);
-  RAL_F c_oow = RAL_FDIV(RAL_ONE, cz);
+  RAL_F a_oow = RAL_FDIV(RAL_ONE, aw);
+  RAL_F b_oow = RAL_FDIV(RAL_ONE, bw);
+  RAL_F c_oow = RAL_FDIV(RAL_ONE, cw);
 
   RAL_F a_uow = RAL_FMUL(au, a_oow);
   RAL_F a_vow = RAL_FMUL(av, a_oow);
@@ -1122,7 +1139,7 @@ void RAL_TRIANGLE(RAL_CONTEXT* context, RAL_F ax, RAL_F ay, RAL_F az, RAL_F bx,
       triangle.p[j].x += xs;
       triangle.p[j].y += ys;
     }
-    //Very ugly, sorry, the same reason RAL_SET_FOV_WITH_DOUBLES exists.
+    // Very ugly, sorry, the same reason RAL_SET_FOV_WITH_DOUBLES exists.
     triangle.p[0].x = RAL_CLAMP(triangle.p[0].x, 0, context->width * RAL_ONE);
     triangle.p[0].y = RAL_CLAMP(triangle.p[0].y, 0, context->height * RAL_ONE);
     triangle.p[1].x = RAL_CLAMP(triangle.p[1].x, 0, context->width * RAL_ONE);
@@ -1130,9 +1147,9 @@ void RAL_TRIANGLE(RAL_CONTEXT* context, RAL_F ax, RAL_F ay, RAL_F az, RAL_F bx,
     triangle.p[2].x = RAL_CLAMP(triangle.p[2].x, 0, context->width * RAL_ONE);
     triangle.p[2].y = RAL_CLAMP(triangle.p[2].y, 0, context->height * RAL_ONE);
 
-    RAL_RASTERIZE(context, triangle.p[0].x, triangle.p[0].y, triangle.p[0].w,
-                  triangle.p[1].x, triangle.p[1].y, triangle.p[1].w,
-                  triangle.p[2].x, triangle.p[2].y, triangle.p[2].w, c);
+    RAL_RASTERIZE(context, triangle.p[0].x, triangle.p[0].y, triangle.p[0].z,
+                  triangle.p[1].x, triangle.p[1].y, triangle.p[1].z,
+                  triangle.p[2].x, triangle.p[2].y, triangle.p[2].z, c);
   }
 }
 
@@ -1191,9 +1208,9 @@ void RAL_TRIANGLE_OBJ(RAL_CONTEXT* context, RAL_F ax, RAL_F ay, RAL_F az,
     triangle.p[2].y = RAL_CLAMP(triangle.p[2].y, 0, context->height * RAL_ONE);
 
     RAL_RASTERIZE_OBJ(context, triangle.p[0].x, triangle.p[0].y,
-                      triangle.p[0].w, triangle.p[1].x, triangle.p[1].y,
-                      triangle.p[1].w, triangle.p[2].x, triangle.p[2].y,
-                      triangle.p[2].w, c, obj);
+                      triangle.p[0].z, triangle.p[1].x, triangle.p[1].y,
+                      triangle.p[1].z, triangle.p[2].x, triangle.p[2].y,
+                      triangle.p[2].z, c, obj);
   }
 }
 
@@ -1252,19 +1269,20 @@ void RAL_TRIANGLE_TEX(RAL_CONTEXT* context, RAL_F ax, RAL_F ay, RAL_F az,
     triangle.p[2].x = RAL_CLAMP(triangle.p[2].x, 0, context->width * RAL_ONE);
     triangle.p[2].y = RAL_CLAMP(triangle.p[2].y, 0, context->height * RAL_ONE);
 
-    RAL_RASTERIZE_TEX(context, triangle.p[0].x, triangle.p[0].y,
-                      triangle.p[0].w, triangle.p[1].x, triangle.p[1].y,
-                      triangle.p[1].w, triangle.p[2].x, triangle.p[2].y,
-                      triangle.p[2].w, triangle.uv[0].x, triangle.uv[0].y,
-                      triangle.uv[1].x, triangle.uv[1].y, triangle.uv[2].x,
-                      triangle.uv[2].y, texture);
+    RAL_RASTERIZE_TEX(
+        context, triangle.p[0].x, triangle.p[0].y, triangle.p[0].z,
+        triangle.p[0].w, triangle.p[1].x, triangle.p[1].y, triangle.p[1].z,
+        triangle.p[1].w, triangle.p[2].x, triangle.p[2].y, triangle.p[2].z,
+        triangle.p[2].w, triangle.uv[0].x, triangle.uv[0].y, triangle.uv[1].x,
+        triangle.uv[1].y, triangle.uv[2].x, triangle.uv[2].y, texture);
   }
 }
 
 void RAL_TRIANGLE_TEX_OBJ(RAL_CONTEXT* context, RAL_F ax, RAL_F ay, RAL_F az,
-                      RAL_F bx, RAL_F by, RAL_F bz, RAL_F cx, RAL_F cy,
-                      RAL_F cz, RAL_F au, RAL_F av, RAL_F bu, RAL_F bv,
-                      RAL_F cu, RAL_F cv, RAL_TEXTURE* texture, uint8_t obj) {
+                          RAL_F bx, RAL_F by, RAL_F bz, RAL_F cx, RAL_F cy,
+                          RAL_F cz, RAL_F au, RAL_F av, RAL_F bu, RAL_F bv,
+                          RAL_F cu, RAL_F cv, RAL_TEXTURE* texture,
+                          uint8_t obj) {
   RAL_TRI_TEX t = (RAL_TRI_TEX){
       {{ax, ay, az, RAL_ONE}, {bx, by, bz, RAL_ONE}, {cx, cy, cz, RAL_ONE}},
       {{au, av}, {bu, bv}, {cu, cv}}};
@@ -1315,13 +1333,12 @@ void RAL_TRIANGLE_TEX_OBJ(RAL_CONTEXT* context, RAL_F ax, RAL_F ay, RAL_F az,
     triangle.p[1].y = RAL_CLAMP(triangle.p[1].y, 0, context->height * RAL_ONE);
     triangle.p[2].x = RAL_CLAMP(triangle.p[2].x, 0, context->width * RAL_ONE);
     triangle.p[2].y = RAL_CLAMP(triangle.p[2].y, 0, context->height * RAL_ONE);
-
-    RAL_RASTERIZE_TEX_OBJ(context, triangle.p[0].x, triangle.p[0].y,
-                      triangle.p[0].w, triangle.p[1].x, triangle.p[1].y,
-                      triangle.p[1].w, triangle.p[2].x, triangle.p[2].y,
-                      triangle.p[2].w, triangle.uv[0].x, triangle.uv[0].y,
-                      triangle.uv[1].x, triangle.uv[1].y, triangle.uv[2].x,
-                      triangle.uv[2].y, texture, obj);
+    RAL_RASTERIZE_TEX_OBJ(
+        context, triangle.p[0].x, triangle.p[0].y, triangle.p[0].z,
+        triangle.p[0].w, triangle.p[1].x, triangle.p[1].y, triangle.p[1].z,
+        triangle.p[1].w, triangle.p[2].x, triangle.p[2].y, triangle.p[2].z,
+        triangle.p[2].w, triangle.uv[0].x, triangle.uv[0].y, triangle.uv[1].x,
+        triangle.uv[1].y, triangle.uv[2].x, triangle.uv[2].y, texture, obj);
   }
 }
 
@@ -1346,32 +1363,31 @@ void RAL_SET_FOV(RAL_CONTEXT* context, RAL_F fov_in_degrees) {
   RAL_F aspect = RAL_FDIV(RAL_I2F(context->width), RAL_I2F(context->height));
   context->proj =
       RAL_M4_PROJ(fov_in_degrees, aspect, context->near, context->far);
-  
-  #ifdef RAL_SET_FOV_WITH_DOUBLES  
+
+#ifdef RAL_SET_FOV_WITH_DOUBLES
   double fov_y = RAL_F2D(fov_in_degrees) * 3.1415926 / 180.0;
   double fov_x = 2 * atan(tan(fov_y / 2.0) * RAL_F2D(aspect));
   RAL_F sx = RAL_D2F(sin(fov_x / 2.0));
   RAL_F cx = RAL_D2F(cos(fov_x / 2.0));
   RAL_F sy = RAL_D2F(sin(fov_y / 2.0));
   RAL_F cy = RAL_D2F(cos(fov_y / 2.0));
-  #else
+#else
   RAL_F fov_y = RAL_FMUL(fov_in_degrees, RAL_PI) / 180;
   RAL_F fov_x = 2 * RAL_FATAN_HP(RAL_FMUL(RAL_FTAN(fov_y / 2), aspect));
   RAL_F sx = RAL_FSIN(fov_x / 2);
   RAL_F cx = RAL_FCOS(fov_x / 2);
   RAL_F sy = RAL_FSIN(fov_y / 2);
   RAL_F cy = RAL_FCOS(fov_y / 2);
-  #endif
-  
-  //TODO: Write high precision solution that will work
+#endif
+
+  // TODO: Write high precision solution that will work
   /*RAL_F fov_y = RAL_FMUL(fov_in_degrees, RAL_PI) / 180;
   RAL_F fov_x = 2 * RAL_FATAN_HP(RAL_FMUL(RAL_FTAN_HP(fov_y / 2), aspect));
   RAL_F sx = RAL_FSIN_HP(fov_x / 2);
   RAL_F cx = RAL_FCOS_HP(fov_x / 2);
   RAL_F sy = RAL_FSIN_HP(fov_y / 2);
   RAL_F cy = RAL_FCOS_HP(fov_y / 2);*/
-  
-  
+
   RAL_V4 origin = {0, 0, 0};
 
   context->clip_planes[RAL_LEFT_FRUSTUM_PLANE].p = origin;
@@ -1386,7 +1402,8 @@ void RAL_SET_FOV(RAL_CONTEXT* context, RAL_F fov_in_degrees) {
   context->clip_planes[RAL_BOTTOM_FRUSTUM_PLANE].p = origin;
   context->clip_planes[RAL_BOTTOM_FRUSTUM_PLANE].n = (RAL_V4){0, cy, sy};
 
-  context->clip_planes[RAL_NEAR_FRUSTUM_PLANE].p = (RAL_V4){0, 0, context->near};
+  context->clip_planes[RAL_NEAR_FRUSTUM_PLANE].p =
+      (RAL_V4){0, 0, context->near};
   context->clip_planes[RAL_NEAR_FRUSTUM_PLANE].n = (RAL_V4){0, 0, RAL_ONE};
 
   context->clip_planes[RAL_FAR_FRUSTUM_PLANE].p = (RAL_V4){0, 0, context->far};
